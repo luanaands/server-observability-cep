@@ -46,11 +46,11 @@ func (s *CepDetailsService) GetCepDetails(cep string, url string) (*dto.Response
 		return nil, errors.New(response.Erro.Message)
 	}
 
-	dtoResponse := &dto.Response{}
-	dtoResponse.Localidade = response.CepDetails.Localidade
-	dtoResponse.TempC = response.CepDetails.TempC
-	dtoResponse.TempF = response.CepDetails.TempF
-	dtoResponse.TempK = response.CepDetails.TempK
-
+	dtoResponse := &dto.Response{
+		Localidade: response.CepDetails.Localidade,
+		TempC:      response.CepDetails.TempC,
+		TempF:      response.CepDetails.TempF,
+		TempK:      response.CepDetails.TempK,
+	}
 	return dtoResponse, nil
 }
