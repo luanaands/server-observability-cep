@@ -32,15 +32,12 @@ func main() {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
-	r.Use(middleware.WithValue("ViaCepHost", configs.ViaCepApiHost))
-	r.Use(middleware.WithValue("ApiWeatherHost", configs.ApiWeatherHost))
-	r.Use(middleware.WithValue("ApiWeatherKey", configs.ApiWeatherKey))
+	r.Use(middleware.WithValue("MyCoreHost", configs.MyCoreHost))
 
-	var cepService service.CepInterface = service.NewCepService()
-	var weatherService service.WeatherInterface = service.NewWeatherService()
-	handler := handlers.NewCepHandler(cepService, weatherService)
+	var cepService service.CepDetailsInterface = service.NewCepDetailsService()
+	handler := handlers.NewCepHandler(cepService)
 
-	r.Get("/weather", handler.GetCep)
+	r.Post("/cep", handler.GetCep)
 
 	r.Get("/docs/*", httpSwagger.Handler(httpSwagger.URL("https://server-validation-cep-1020181349268.us-central1.run.app/docs/doc.json")))
 

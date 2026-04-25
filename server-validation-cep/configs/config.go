@@ -5,9 +5,7 @@ import (
 )
 
 type Conf struct {
-	ViaCepApiHost  string `mapstructure:"VIA_CEP_API_HOST"`
-	ApiWeatherKey  string `mapstructure:"API_WEATHER_KEY"`
-	ApiWeatherHost string `mapstructure:"API_WEATHER_HOST"`
+	MyCoreHost string `mapstructure:"MY_CORE_HOST"`
 }
 
 func LoadConfig(path string) (*Conf, error) {

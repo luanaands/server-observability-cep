@@ -12,31 +12,21 @@ import (
 )
 
 // Mock implementations
-type mockCepService struct {
-	response *dto.CepResponse
+type mockCepDetailsService struct {
+	response *dto.Response
 	err      error
 }
 
-func (m *mockCepService) GetViaCep(cep, url string) (*dto.CepResponse, error) {
-	return m.response, m.err
-}
-
-type mockWeatherService struct {
-	response *dto.WeatherResponse
-	err      error
-}
-
-func (m *mockWeatherService) GetWeather(city, key, host string) (*dto.WeatherResponse, error) {
+func (m *mockCepDetailsService) GetCepDetails(cep, url string) (*dto.Response, error) {
 	return m.response, m.err
 }
 
 func TestGetCep_MissingCep(t *testing.T) {
 	handler := &CepHandler{
-		Service:        &mockCepService{},
-		WeatherService: &mockWeatherService{},
+		Service: &mockCepDetailsService{},
 	}
-	req := httptest.NewRequest("GET", "/weather", nil)
-	ctx := context.WithValue(context.WithValue(context.WithValue(req.Context(), "ViaCepHost", "http://mock"), "ApiWeatherHost", "http://mock"), "ApiWeatherKey", "key")
+	req := httptest.NewRequest("GET", "/cep", nil)
+	ctx := context.WithValue(req.Context(), "MyCoreHost", "http://mock")
 	req = req.WithContext(ctx)
 	w := httptest.NewRecorder()
 
@@ -50,11 +40,10 @@ func TestGetCep_MissingCep(t *testing.T) {
 
 func TestGetCep_InvalidCepLength(t *testing.T) {
 	handler := &CepHandler{
-		Service:        &mockCepService{},
-		WeatherService: &mockWeatherService{},
+		Service: &mockCepDetailsService{},
 	}
-	req := httptest.NewRequest("GET", "/weather?cep=123", nil)
-	ctx := context.WithValue(context.WithValue(context.WithValue(req.Context(), "ViaCepHost", "http://mock"), "ApiWeatherHost", "http://mock"), "ApiWeatherKey", "key")
+	req := httptest.NewRequest("GET", "/cep?cep=123", nil)
+	ctx := context.WithValue(req.Context(), "MyCoreHost", "http://mock")
 	req = req.WithContext(ctx)
 	w := httptest.NewRecorder()
 
@@ -68,11 +57,10 @@ func TestGetCep_InvalidCepLength(t *testing.T) {
 
 func TestGetCep_GetViaCepError(t *testing.T) {
 	handler := &CepHandler{
-		Service:        &mockCepService{err: assert.AnError},
-		WeatherService: &mockWeatherService{},
+		Service: &mockCepDetailsService{err: assert.AnError},
 	}
-	req := httptest.NewRequest("GET", "/weather?cep=01001000", nil)
-	ctx := context.WithValue(context.WithValue(context.WithValue(req.Context(), "ViaCepHost", "http://mock"), "ApiWeatherHost", "http://mock"), "ApiWeatherKey", "key")
+	req := httptest.NewRequest("GET", "/cep?cep=01001000", nil)
+	ctx := context.WithValue(req.Context(), "MyCoreHost", "http://mock")
 	req = req.WithContext(ctx)
 	w := httptest.NewRecorder()
 
@@ -85,13 +73,12 @@ func TestGetCep_GetViaCepError(t *testing.T) {
 }
 
 func TestGetCep_GetWeatherError(t *testing.T) {
-	viaCepResp := &dto.CepResponse{Localidade: "São Paulo"}
+	viaCepResp := &dto.Response{Localidade: "Sao paulo", TempC: 25.0, TempF: 77.0, TempK: 298.0}
 	handler := &CepHandler{
-		Service:        &mockCepService{response: viaCepResp},
-		WeatherService: &mockWeatherService{err: assert.AnError},
+		Service: &mockCepDetailsService{response: viaCepResp},
 	}
-	req := httptest.NewRequest("GET", "/weather?cep=01001000", nil)
-	ctx := context.WithValue(context.WithValue(context.WithValue(req.Context(), "ViaCepHost", "http://mock"), "ApiWeatherHost", "http://mock"), "ApiWeatherKey", "key")
+	req := httptest.NewRequest("GET", "/cep?cep=01001000", nil)
+	ctx := context.WithValue(req.Context(), "MyCoreHost", "http://mock")
 	req = req.WithContext(ctx)
 	w := httptest.NewRecorder()
 
@@ -104,17 +91,12 @@ func TestGetCep_GetWeatherError(t *testing.T) {
 }
 
 func TestGetCep_Success(t *testing.T) {
-	viaCepResp := &dto.CepResponse{Localidade: "São Paulo"}
-	weatherResp := &dto.WeatherResponse{
-		TempC: 25.0,
-		TempF: 77.0,
-	}
+	cepDetailsResponse := &dto.Response{Localidade: "Sao paulo", TempC: 25.0, TempF: 77.0, TempK: 298.0}
 	handler := &CepHandler{
-		Service:        &mockCepService{response: viaCepResp},
-		WeatherService: &mockWeatherService{response: weatherResp},
+		Service: &mockCepDetailsService{response: cepDetailsResponse},
 	}
-	req := httptest.NewRequest("GET", "/weather?cep=01001000", nil)
-	ctx := context.WithValue(context.WithValue(context.WithValue(req.Context(), "ViaCepHost", "http://mock"), "ApiWeatherHost", "http://mock"), "ApiWeatherKey", "key")
+	req := httptest.NewRequest("GET", "/cep?cep=01001000", nil)
+	ctx := context.WithValue(req.Context(), "MyCoreHost", "http://mock")
 	req = req.WithContext(ctx)
 	w := httptest.NewRecorder()
 

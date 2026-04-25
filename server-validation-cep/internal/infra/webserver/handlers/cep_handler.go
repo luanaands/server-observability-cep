@@ -4,33 +4,28 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/luanaands/server-validation-cep/internal/dto"
 	"github.com/luanaands/server-validation-cep/internal/infra/service"
 )
 
 type CepHandler struct {
-	Service        service.CepInterface
-	WeatherService service.WeatherInterface
+	Service service.CepDetailsInterface
 }
 
-func NewCepHandler(service service.CepInterface, weatherService service.WeatherInterface) *CepHandler {
+func NewCepHandler(service service.CepDetailsInterface) *CepHandler {
 	return &CepHandler{
-		Service:        service,
-		WeatherService: weatherService,
+		Service: service,
 	}
 }
 
-// @Summary Buscar clima atual
-// @Description Retorna dados do tempo consultando ViaCEP e WeatherAPI
+// @Summary Buscar informações do CEP
+// @Description Retorna informações do CEP consultando a API do ViaCEP e da WeatherAPI.
 // @Tags CEP
 // @Accept json
 // @Produce json
 // @Param cep query string true "CEP sem formatação (ex: 01001000)"
-// @Router /weather [get]
+// @Router /cep [post]
 func (h *CepHandler) GetCep(w http.ResponseWriter, r *http.Request) {
-	viaCepUrl := r.Context().Value("ViaCepHost").(string)
-	apiWeatherHost := r.Context().Value("ApiWeatherHost").(string)
-	apiWeatherKey := r.Context().Value("ApiWeatherKey").(string)
+	myHost := r.Context().Value("MyCoreHost").(string)
 	cep := r.URL.Query().Get("cep")
 
 	if cep == "" {
@@ -45,24 +40,12 @@ func (h *CepHandler) GetCep(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	viaCepResponse, err := h.Service.GetViaCep(cep, viaCepUrl)
+	result, err := h.Service.GetCepDetails(cep, myHost)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(map[string]string{"error": "can not find zipcode"})
+		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 		return
 	}
-
-	realtimeWeather, err := h.WeatherService.GetWeather(viaCepResponse.Localidade, apiWeatherKey, apiWeatherHost)
-	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(map[string]string{"error": "can not find weather"})
-		return
-	}
-
-	var result dto.Response
-	result.TempC = realtimeWeather.TempC
-	result.TempF = realtimeWeather.TempF
-	result.TempK = realtimeWeather.TempC + 273
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
