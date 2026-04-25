@@ -4,7 +4,6 @@ go 1.25.0
 
 require (
 	github.com/go-chi/chi/v5 v5.2.4
-	github.com/luanaands/deploy-cloud-run v0.0.0-20260425000550-2ee9e4be370e
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
 	github.com/swaggo/http-swagger v1.3.4
