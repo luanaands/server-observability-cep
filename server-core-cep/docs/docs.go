@@ -20,7 +20,7 @@ const docTemplate = `{
     "basePath": "{{.BasePath}}",
     "paths": {
         "/cep": {
-            "get": {
+            "post": {
                 "description": "Retorna dados do tempo consultando ViaCEP e WeatherAPI",
                 "consumes": [
                     "application/json"
@@ -34,14 +34,26 @@ const docTemplate = `{
                 "summary": "Service B - Buscar localidade e clima atual",
                 "parameters": [
                     {
-                        "type": "string",
                         "description": "CEP sem formatação (ex: 01001000)",
                         "name": "cep",
-                        "in": "query",
-                        "required": true
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CepRequest"
+                        }
                     }
                 ],
                 "responses": {}
+            }
+        }
+    },
+    "definitions": {
+        "dto.CepRequest": {
+            "type": "object",
+            "properties": {
+                "cep": {
+                    "type": "string"
+                }
             }
         }
     }

@@ -1,5 +1,11 @@
 package dto
 
+import "errors"
+
+type CepRequest struct {
+	Cep string `json:"cep"`
+}
+
 type CepResponse struct {
 	Localidade string `json:"localidade"`
 }
@@ -15,3 +21,5 @@ type Response struct {
 	TempF float64 `json:"temp_f"`
 	TempK float64 `json:"temp_k"`
 }
+
+var ErrZipcodeNotFound = errors.New("zipcode not found")

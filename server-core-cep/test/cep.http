@@ -1,1 +1,5 @@
-Get http://localhost:8081/cep?cep=01001000
+POST  http://localhost:8081/cep
+
+{
+  "cep": "01001201"
+}

@@ -1,4 +1,10 @@
 basePath: /
+definitions:
+  dto.CepRequest:
+    properties:
+      cep:
+        type: string
+    type: object
 host: localhost:8081
 info:
   contact:
@@ -11,16 +17,17 @@ info:
   version: "1.0"
 paths:
   /cep:
-    get:
+    post:
       consumes:
       - application/json
       description: Retorna dados do tempo consultando ViaCEP e WeatherAPI
       parameters:
       - description: 'CEP sem formatação (ex: 01001000)'
-        in: query
+        in: body
         name: cep
         required: true
-        type: string
+        schema:
+          $ref: '#/definitions/dto.CepRequest'
       produces:
       - application/json
       responses: {}

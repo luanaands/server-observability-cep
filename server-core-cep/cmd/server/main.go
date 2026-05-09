@@ -40,7 +40,7 @@ func main() {
 	var weatherService service.WeatherInterface = service.NewWeatherService()
 	handler := handlers.NewCepHandler(cepService, weatherService)
 
-	r.Get("/cep", handler.GetCep)
+	r.Post("/cep", handler.GetCep)
 
 	r.Get("/docs/*", httpSwagger.Handler(httpSwagger.URL("http://localhost:8081/docs/doc.json")))
 

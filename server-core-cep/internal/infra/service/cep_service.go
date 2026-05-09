@@ -2,16 +2,14 @@ package service
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
 
 	"github.com/luanaands/server-core-cep/internal/dto"
 	"github.com/luanaands/server-core-cep/internal/entity"
+	zipcode "github.com/luanaands/server-core-cep/internal/zipecode"
 )
-
-var ErrZipcodeNotFound = errors.New("zipcode not found")
 
 type CepService struct {
 	client *http.Client
@@ -39,7 +37,7 @@ func (s *CepService) GetViaCep(cep string, url string) (*dto.CepResponse, error)
 	}
 
 	if resp.StatusCode == http.StatusNotFound {
-		return nil, ErrZipcodeNotFound
+		return nil, zipcode.ErrZipcodeNotFound
 	}
 
 	body, err := io.ReadAll(resp.Body)
@@ -53,7 +51,7 @@ func (s *CepService) GetViaCep(cep string, url string) (*dto.CepResponse, error)
 	}
 
 	if response.Erro == "true" {
-		return nil, ErrZipcodeNotFound
+		return nil, zipcode.ErrZipcodeNotFound
 	}
 
 	var dtoResponse *dto.CepResponse

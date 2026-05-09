@@ -8,9 +8,8 @@ import (
 
 	"github.com/luanaands/server-core-cep/internal/dto"
 	"github.com/luanaands/server-core-cep/internal/infra/service"
+	zipcode "github.com/luanaands/server-core-cep/internal/zipecode"
 )
-
-var ErrZipcodeNotFound = errors.New("zipcode not found")
 
 type CepHandler struct {
 	Service        service.CepInterface
@@ -29,14 +28,21 @@ func NewCepHandler(service service.CepInterface, weatherService service.WeatherI
 // @Tags CEP
 // @Accept json
 // @Produce json
-// @Param cep query string true "CEP sem formatação (ex: 01001000)"
-// @Router /cep [get]
+// @Param cep body dto.CepRequest true "CEP sem formatação (ex: 01001000)"
+// @Router /cep [Post]
 func (h *CepHandler) GetCep(w http.ResponseWriter, r *http.Request) {
 	viaCepUrl := r.Context().Value("ViaCepHost").(string)
 	apiWeatherHost := r.Context().Value("ApiWeatherHost").(string)
 	apiWeatherKey := r.Context().Value("ApiWeatherKey").(string)
-	cep := r.URL.Query().Get("cep")
 
+	var req dto.CepRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "invalid request body"})
+		return
+	}
+
+	cep := req.Cep
 	if len(cep) != 8 {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		json.NewEncoder(w).Encode(map[string]string{"error": "invalid zipcode"})
@@ -51,12 +57,11 @@ func (h *CepHandler) GetCep(w http.ResponseWriter, r *http.Request) {
 
 	viaCepResponse, err := h.Service.GetViaCep(cep, viaCepUrl)
 	if err != nil {
-		if errors.Is(err, ErrZipcodeNotFound) {
+		if errors.Is(err, zipcode.ErrZipcodeNotFound) {
 			w.WriteHeader(http.StatusNotFound)
 			json.NewEncoder(w).Encode(map[string]string{"error": "can not find zipcode"})
 			return
 		}
-
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]string{"error": "internal server error"})
 		return
