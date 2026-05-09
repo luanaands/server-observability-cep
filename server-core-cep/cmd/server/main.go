@@ -14,13 +14,13 @@ import (
 
 // @title Desafio CEP API - golang
 // @version 1.0
-// @description API para consulta do tempo real de um CEP utilizando a API do ViaCEP e da WeatherAPI.
+// @description API interna para consulta do tempo real de um CEP utilizando a API do ViaCEP e da WeatherAPI.
 // @termsOfService http://swagger.io/terms/
 
 // @contact.name Luana Andrade
 // @contact.email luanaands@gmail.com
 
-// @host server-core-cep-1020181349268.us-central1.run.app
+// @host localhost:8081
 // @schemes https
 // @basePath /
 func main() {
@@ -40,9 +40,9 @@ func main() {
 	var weatherService service.WeatherInterface = service.NewWeatherService()
 	handler := handlers.NewCepHandler(cepService, weatherService)
 
-	r.Get("/weather", handler.GetCep)
+	r.Get("/cep", handler.GetCep)
 
-	r.Get("/docs/*", httpSwagger.Handler(httpSwagger.URL("https://server-core-cep-1020181349268.us-central1.run.app/docs/doc.json")))
+	r.Get("/docs/*", httpSwagger.Handler(httpSwagger.URL("http://localhost:8081/docs/doc.json")))
 
-	http.ListenAndServe(":8080", r)
+	http.ListenAndServe(":8081", r)
 }

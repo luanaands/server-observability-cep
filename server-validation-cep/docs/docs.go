@@ -19,9 +19,9 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/weather": {
-            "get": {
-                "description": "Retorna dados do tempo consultando ViaCEP e WeatherAPI",
+        "/cep": {
+            "post": {
+                "description": "Retorna informações do CEP",
                 "consumes": [
                     "application/json"
                 ],
@@ -31,17 +31,29 @@ const docTemplate = `{
                 "tags": [
                     "CEP"
                 ],
-                "summary": "Buscar clima atual",
+                "summary": "Service A - Buscar informações do CEP",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "CEP sem formatação (ex: 01001000)",
-                        "name": "cep",
-                        "in": "query",
-                        "required": true
+                        "description": "CEP sem formatacao (ex: 01001000)",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CepRequest"
+                        }
                     }
                 ],
                 "responses": {}
+            }
+        }
+    },
+    "definitions": {
+        "dto.CepRequest": {
+            "type": "object",
+            "properties": {
+                "cep": {
+                    "type": "string"
+                }
             }
         }
     }
@@ -50,11 +62,11 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "server-validation-cep-mepu6h3qaa-uc.a.run.app",
+	Host:             "localhost:8082",
 	BasePath:         "/",
 	Schemes:          []string{"https"},
 	Title:            "Desafio CEP API - golang",
-	Description:      "API para consulta do tempo real de um CEP utilizando a API do ViaCEP e da WeatherAPI.",
+	Description:      "API para consulta do tempo real de um CEP",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

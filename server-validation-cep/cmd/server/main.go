@@ -14,7 +14,7 @@ import (
 
 // @title Desafio CEP API - golang
 // @version 1.0
-// @description API para consulta do tempo real de um CEP utilizando a API do ViaCEP e da WeatherAPI.
+// @description API para consulta do tempo real de um CEP
 // @termsOfService http://swagger.io/terms/
 
 // @contact.name Luana Andrade

@@ -19,7 +19,7 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/weather": {
+        "/cep": {
             "get": {
                 "description": "Retorna dados do tempo consultando ViaCEP e WeatherAPI",
                 "consumes": [
@@ -31,7 +31,7 @@ const docTemplate = `{
                 "tags": [
                     "CEP"
                 ],
-                "summary": "Buscar clima atual",
+                "summary": "Service B - Buscar localidade e clima atual",
                 "parameters": [
                     {
                         "type": "string",
@@ -50,11 +50,11 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "server-core-cep-mepu6h3qaa-uc.a.run.app",
+	Host:             "localhost:8081",
 	BasePath:         "/",
 	Schemes:          []string{"https"},
 	Title:            "Desafio CEP API - golang",
-	Description:      "API para consulta do tempo real de um CEP utilizando a API do ViaCEP e da WeatherAPI.",
+	Description:      "API interna para consulta do tempo real de um CEP utilizando a API do ViaCEP e da WeatherAPI.",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

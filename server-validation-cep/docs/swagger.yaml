@@ -1,30 +1,36 @@
 basePath: /
-host: server-validation-cep-mepu6h3qaa-uc.a.run.app
+definitions:
+  dto.CepRequest:
+    properties:
+      cep:
+        type: string
+    type: object
+host: localhost:8082
 info:
   contact:
     email: luanaands@gmail.com
     name: Luana Andrade
-  description: API para consulta do tempo real de um CEP utilizando a API do ViaCEP
-    e da WeatherAPI.
+  description: API para consulta do tempo real de um CEP
   termsOfService: http://swagger.io/terms/
   title: Desafio CEP API - golang
   version: "1.0"
 paths:
-  /weather:
-    get:
+  /cep:
+    post:
       consumes:
       - application/json
-      description: Retorna dados do tempo consultando ViaCEP e WeatherAPI
+      description: Retorna informações do CEP
       parameters:
-      - description: 'CEP sem formatação (ex: 01001000)'
-        in: query
-        name: cep
+      - description: 'CEP sem formatacao (ex: 01001000)'
+        in: body
+        name: request
         required: true
-        type: string
+        schema:
+          $ref: '#/definitions/dto.CepRequest'
       produces:
       - application/json
       responses: {}
-      summary: Buscar clima atual
+      summary: Service A - Buscar informações do CEP
       tags:
       - CEP
 schemes:

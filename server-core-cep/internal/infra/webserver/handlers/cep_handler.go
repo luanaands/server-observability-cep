@@ -24,7 +24,7 @@ func NewCepHandler(service service.CepInterface, weatherService service.WeatherI
 	}
 }
 
-// @Summary Service B - Buscar clima atual
+// @Summary Service B - Buscar localidade e clima atual
 // @Description Retorna dados do tempo consultando ViaCEP e WeatherAPI
 // @Tags CEP
 // @Accept json

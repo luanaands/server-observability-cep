@@ -1,1 +1,1 @@
-Get http://localhost:8081/weather?cep=01001000
+Get http://localhost:8081/cep?cep=01001000

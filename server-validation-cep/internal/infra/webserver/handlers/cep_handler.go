@@ -20,11 +20,11 @@ func NewCepHandler(service service.CepDetailsInterface) *CepHandler {
 }
 
 // @Summary Service A - Buscar informações do CEP
-// @Description Retorna informações do CEP consultando a API do ViaCEP e da WeatherAPI.
+// @Description Retorna informações do CEP
 // @Tags CEP
 // @Accept json
 // @Produce json
-// @Param request body dto.CepResponse true "CEP sem formatacao (ex: 01001000)"
+// @Param request body dto.CepRequest true "CEP sem formatacao (ex: 01001000)"
 // @Router /cep [post]
 func (h *CepHandler) GetCep(w http.ResponseWriter, r *http.Request) {
 	myHost := r.Context().Value("MyCoreHost").(string)
