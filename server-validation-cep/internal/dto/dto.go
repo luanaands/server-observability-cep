@@ -1,6 +1,6 @@
 package dto
 
-type CepResponse struct {
+type CepRequest struct {
 	Cep string `json:"cep"`
 }
 

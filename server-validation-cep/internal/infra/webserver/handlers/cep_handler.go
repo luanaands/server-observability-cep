@@ -29,7 +29,7 @@ func NewCepHandler(service service.CepDetailsInterface) *CepHandler {
 func (h *CepHandler) GetCep(w http.ResponseWriter, r *http.Request) {
 	myHost := r.Context().Value("MyCoreHost").(string)
 
-	var request dto.CepResponse
+	var request dto.CepRequest
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{"error": "invalid request body"})
@@ -37,12 +37,6 @@ func (h *CepHandler) GetCep(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cep := request.Cep
-	if cep == "" {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{"error": "CEP obrigatorio"})
-		return
-	}
-
 	if len(cep) != 8 {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		json.NewEncoder(w).Encode(map[string]string{"error": "invalid zipcode"})

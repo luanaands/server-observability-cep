@@ -42,10 +42,10 @@ func TestGetCep_MissingCep(t *testing.T) {
 
 	handler.GetCep(w, req)
 
-	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Equal(t, http.StatusUnprocessableEntity, w.Code)
 	var resp map[string]string
 	json.Unmarshal(w.Body.Bytes(), &resp)
-	assert.Equal(t, "CEP obrigatorio", resp["error"])
+	assert.Equal(t, "invalid zipcode", resp["error"])
 }
 
 func TestGetCep_InvalidRequestBody(t *testing.T) {
