@@ -21,7 +21,7 @@ func TestGetCepDetails(t *testing.T) {
 	s := &CepDetailsService{}
 	resp, err := s.GetCepDetails("01001000", server.URL)
 	require.NoError(t, err)
-	assert.Equal(t, "Sao Paulo", resp.Localidade)
+	assert.Equal(t, "Sao Paulo", resp.City)
 	assert.Equal(t, 25.5, resp.TempC)
 	assert.Equal(t, 77.9, resp.TempF)
 	assert.Equal(t, 298.6, resp.TempK)

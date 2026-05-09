@@ -73,7 +73,7 @@ func TestGetCep_GetViaCepError(t *testing.T) {
 }
 
 func TestGetCep_GetWeatherError(t *testing.T) {
-	viaCepResp := &dto.Response{Localidade: "Sao paulo", TempC: 25.0, TempF: 77.0, TempK: 298.0}
+	viaCepResp := &dto.Response{City: "Sao paulo", TempC: 25.0, TempF: 77.0, TempK: 298.0}
 	handler := &CepHandler{
 		Service: &mockCepDetailsService{response: viaCepResp},
 	}
@@ -91,7 +91,7 @@ func TestGetCep_GetWeatherError(t *testing.T) {
 }
 
 func TestGetCep_Success(t *testing.T) {
-	cepDetailsResponse := &dto.Response{Localidade: "Sao paulo", TempC: 25.0, TempF: 77.0, TempK: 298.0}
+	cepDetailsResponse := &dto.Response{City: "Sao paulo", TempC: 25.0, TempF: 77.0, TempK: 298.0}
 	handler := &CepHandler{
 		Service: &mockCepDetailsService{response: cepDetailsResponse},
 	}

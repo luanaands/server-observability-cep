@@ -5,8 +5,8 @@ type CepResponse struct {
 }
 
 type Response struct {
-	Localidade string  `json:"localidade"`
-	TempC      float64 `json:"temp_c"`
-	TempF      float64 `json:"temp_f"`
-	TempK      float64 `json:"temp_k"`
+	City  string  `json:"city"`
+	TempC float64 `json:"temp_c"`
+	TempF float64 `json:"temp_f"`
+	TempK float64 `json:"temp_k"`
 }

@@ -4,12 +4,15 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 
 	"github.com/luanaands/server-validation-cep/internal/dto"
 	"github.com/luanaands/server-validation-cep/internal/entity"
 )
+
+var ErrZipcodeNotFound = errors.New("zipcode not found")
 
 type CepDetailsService struct {
 	client *http.Client
@@ -33,24 +36,29 @@ func (s *CepDetailsService) GetCepDetails(cep string, url string) (*dto.Response
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode >= 500 {
+		return nil, fmt.Errorf("Service B error: status %d", resp.StatusCode)
+	}
+
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, ErrZipcodeNotFound
+	}
+
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
-	var response *entity.Response
+
+	var response *entity.CepDetails
 	if err := json.Unmarshal(bodyBytes, &response); err != nil {
 		return nil, err
 	}
 
-	if response.Erro.Success != true {
-		return nil, errors.New(response.Erro.Message)
-	}
-
 	dtoResponse := &dto.Response{
-		Localidade: response.CepDetails.Localidade,
-		TempC:      response.CepDetails.TempC,
-		TempF:      response.CepDetails.TempF,
-		TempK:      response.CepDetails.TempK,
+		City:  response.City,
+		TempC: response.TempC,
+		TempF: response.TempF,
+		TempK: response.TempK,
 	}
 	return dtoResponse, nil
 }
