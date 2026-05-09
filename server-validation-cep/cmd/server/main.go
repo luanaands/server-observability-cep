@@ -20,7 +20,7 @@ import (
 // @contact.name Luana Andrade
 // @contact.email luanaands@gmail.com
 
-// @host server-validation-cep-1020181349268.us-central1.run.app
+// @host localhost:8082
 // @schemes https
 // @basePath /
 func main() {
@@ -39,7 +39,7 @@ func main() {
 
 	r.Post("/cep", handler.GetCep)
 
-	r.Get("/docs/*", httpSwagger.Handler(httpSwagger.URL("https://server-validation-cep-1020181349268.us-central1.run.app/docs/doc.json")))
+	r.Get("/docs/*", httpSwagger.Handler(httpSwagger.URL("http://localhost:8082/docs/doc.json")))
 
-	http.ListenAndServe(":8080", r)
+	http.ListenAndServe(":8082", r)
 }

@@ -5,29 +5,39 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/luanaands/server-validation-cep/internal/dto"
+	"github.com/luanaands/server-validation-cep/internal/infra/service"
 	"github.com/stretchr/testify/assert"
 )
 
-// Mock implementations
 type mockCepDetailsService struct {
 	response *dto.Response
 	err      error
+	cep      string
+	url      string
 }
 
 func (m *mockCepDetailsService) GetCepDetails(cep, url string) (*dto.Response, error) {
+	m.cep = cep
+	m.url = url
 	return m.response, m.err
+}
+
+func newCepRequest(body string) *http.Request {
+	req := httptest.NewRequest(http.MethodPost, "/cep", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	ctx := context.WithValue(req.Context(), "MyCoreHost", "http://mock")
+	return req.WithContext(ctx)
 }
 
 func TestGetCep_MissingCep(t *testing.T) {
 	handler := &CepHandler{
 		Service: &mockCepDetailsService{},
 	}
-	req := httptest.NewRequest("GET", "/cep", nil)
-	ctx := context.WithValue(req.Context(), "MyCoreHost", "http://mock")
-	req = req.WithContext(ctx)
+	req := newCepRequest(`{}`)
 	w := httptest.NewRecorder()
 
 	handler.GetCep(w, req)
@@ -35,16 +45,29 @@ func TestGetCep_MissingCep(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 	var resp map[string]string
 	json.Unmarshal(w.Body.Bytes(), &resp)
-	assert.Equal(t, "CEP é obrigatório", resp["error"])
+	assert.Equal(t, "CEP obrigatorio", resp["error"])
+}
+
+func TestGetCep_InvalidRequestBody(t *testing.T) {
+	handler := &CepHandler{
+		Service: &mockCepDetailsService{},
+	}
+	req := newCepRequest(`{`)
+	w := httptest.NewRecorder()
+
+	handler.GetCep(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	var resp map[string]string
+	json.Unmarshal(w.Body.Bytes(), &resp)
+	assert.Equal(t, "invalid request body", resp["error"])
 }
 
 func TestGetCep_InvalidCepLength(t *testing.T) {
 	handler := &CepHandler{
 		Service: &mockCepDetailsService{},
 	}
-	req := httptest.NewRequest("GET", "/cep?cep=123", nil)
-	ctx := context.WithValue(req.Context(), "MyCoreHost", "http://mock")
-	req = req.WithContext(ctx)
+	req := newCepRequest(`{"cep":"123"}`)
 	w := httptest.NewRecorder()
 
 	handler.GetCep(w, req)
@@ -55,13 +78,26 @@ func TestGetCep_InvalidCepLength(t *testing.T) {
 	assert.Equal(t, "invalid zipcode", resp["error"])
 }
 
-func TestGetCep_GetViaCepError(t *testing.T) {
+func TestGetCep_InvalidCepCharacters(t *testing.T) {
 	handler := &CepHandler{
-		Service: &mockCepDetailsService{err: assert.AnError},
+		Service: &mockCepDetailsService{},
 	}
-	req := httptest.NewRequest("GET", "/cep?cep=01001000", nil)
-	ctx := context.WithValue(req.Context(), "MyCoreHost", "http://mock")
-	req = req.WithContext(ctx)
+	req := newCepRequest(`{"cep":"abcdefgh"}`)
+	w := httptest.NewRecorder()
+
+	handler.GetCep(w, req)
+
+	assert.Equal(t, http.StatusUnprocessableEntity, w.Code)
+	var resp map[string]string
+	json.Unmarshal(w.Body.Bytes(), &resp)
+	assert.Equal(t, "invalid zipcode", resp["error"])
+}
+
+func TestGetCep_ZipcodeNotFound(t *testing.T) {
+	handler := &CepHandler{
+		Service: &mockCepDetailsService{err: service.ErrZipcodeNotFound},
+	}
+	req := newCepRequest(`{"cep":"01001000"}`)
 	w := httptest.NewRecorder()
 
 	handler.GetCep(w, req)
@@ -72,37 +108,35 @@ func TestGetCep_GetViaCepError(t *testing.T) {
 	assert.Equal(t, "can not find zipcode", resp["error"])
 }
 
-func TestGetCep_GetWeatherError(t *testing.T) {
-	viaCepResp := &dto.Response{City: "Sao paulo", TempC: 25.0, TempF: 77.0, TempK: 298.0}
+func TestGetCep_ServiceError(t *testing.T) {
 	handler := &CepHandler{
-		Service: &mockCepDetailsService{response: viaCepResp},
+		Service: &mockCepDetailsService{err: assert.AnError},
 	}
-	req := httptest.NewRequest("GET", "/cep?cep=01001000", nil)
-	ctx := context.WithValue(req.Context(), "MyCoreHost", "http://mock")
-	req = req.WithContext(ctx)
+	req := newCepRequest(`{"cep":"01001000"}`)
 	w := httptest.NewRecorder()
 
 	handler.GetCep(w, req)
 
-	assert.Equal(t, http.StatusNotFound, w.Code)
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
 	var resp map[string]string
 	json.Unmarshal(w.Body.Bytes(), &resp)
-	assert.Equal(t, "can not find weather", resp["error"])
+	assert.Equal(t, "internal server error", resp["error"])
 }
 
 func TestGetCep_Success(t *testing.T) {
 	cepDetailsResponse := &dto.Response{City: "Sao paulo", TempC: 25.0, TempF: 77.0, TempK: 298.0}
+	mockService := &mockCepDetailsService{response: cepDetailsResponse}
 	handler := &CepHandler{
-		Service: &mockCepDetailsService{response: cepDetailsResponse},
+		Service: mockService,
 	}
-	req := httptest.NewRequest("GET", "/cep?cep=01001000", nil)
-	ctx := context.WithValue(req.Context(), "MyCoreHost", "http://mock")
-	req = req.WithContext(ctx)
+	req := newCepRequest(`{"cep":"01001000"}`)
 	w := httptest.NewRecorder()
 
 	handler.GetCep(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, "01001000", mockService.cep)
+	assert.Equal(t, "http://mock", mockService.url)
 	var resp dto.Response
 	json.Unmarshal(w.Body.Bytes(), &resp)
 	assert.Equal(t, 25.0, resp.TempC)

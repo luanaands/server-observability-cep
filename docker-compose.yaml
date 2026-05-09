@@ -1,0 +1,23 @@
+services:
+  server-core-cep:
+    build: 
+      context: ./server-core-cep
+      dockerfile: Dockerfile
+    container_name: server-core-cep
+    ports:
+      - "8081:8080"
+    environment:
+      - VIA_CEP_API_HOST=http://viacep.com.br/ws/
+      - API_WEATHER_HOST=http://api.weatherapi.com/v1/current.json
+      - API_WEATHER_KEY=126619bcfb2b4ddcba1203902261704
+  server-validation-cep:
+    build: 
+      context: ./server-validation-cep
+      dockerfile: Dockerfile
+    container_name: server-validation-cep
+    ports:
+      - "8082:8080"
+    environment:
+      - MY_CORE_HOST=http://server-core-cep:8080/weather
+    depends_on:
+      - server-core-cep

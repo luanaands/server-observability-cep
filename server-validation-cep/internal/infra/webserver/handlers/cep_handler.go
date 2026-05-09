@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/luanaands/server-validation-cep/internal/dto"
 	"github.com/luanaands/server-validation-cep/internal/infra/service"
 )
 
@@ -23,11 +24,24 @@ func NewCepHandler(service service.CepDetailsInterface) *CepHandler {
 // @Tags CEP
 // @Accept json
 // @Produce json
-// @Param cep query string true "CEP sem formatação (ex: 01001000)"
+// @Param request body dto.CepResponse true "CEP sem formatacao (ex: 01001000)"
 // @Router /cep [post]
 func (h *CepHandler) GetCep(w http.ResponseWriter, r *http.Request) {
 	myHost := r.Context().Value("MyCoreHost").(string)
-	cep := r.URL.Query().Get("cep")
+
+	var request dto.CepResponse
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "invalid request body"})
+		return
+	}
+
+	cep := request.Cep
+	if cep == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "CEP obrigatorio"})
+		return
+	}
 
 	if len(cep) != 8 {
 		w.WriteHeader(http.StatusUnprocessableEntity)
