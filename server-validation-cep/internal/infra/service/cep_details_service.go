@@ -2,6 +2,7 @@ package service
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/luanaands/server-validation-cep/internal/dto"
 	"github.com/luanaands/server-validation-cep/internal/entity"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 var ErrZipcodeNotFound = errors.New("zipcode not found")
@@ -20,17 +22,25 @@ type CepDetailsService struct {
 
 func NewCepDetailsService() *CepDetailsService {
 	return &CepDetailsService{
-		client: &http.Client{},
+		client: &http.Client{
+			Transport: otelhttp.NewTransport(http.DefaultTransport),
+		},
 	}
 }
 
-func (s *CepDetailsService) GetCepDetails(cep string, url string) (*dto.Response, error) {
+func (s *CepDetailsService) GetCepDetails(ctx context.Context, cep string, url string) (*dto.Response, error) {
 	body := map[string]string{"cep": cep}
 	jsonBody, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
-	resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonBody))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(jsonBody))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := s.client.Do(req)
 	if err != nil {
 		return nil, err
 	}

@@ -20,7 +20,7 @@ type mockCepDetailsService struct {
 	url      string
 }
 
-func (m *mockCepDetailsService) GetCepDetails(cep, url string) (*dto.Response, error) {
+func (m *mockCepDetailsService) GetCepDetails(_ context.Context, cep, url string) (*dto.Response, error) {
 	m.cep = cep
 	m.url = url
 	return m.response, m.err

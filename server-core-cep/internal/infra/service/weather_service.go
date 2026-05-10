@@ -8,6 +8,7 @@ import (
 
 	"github.com/luanaands/server-core-cep/internal/dto"
 	"github.com/luanaands/server-core-cep/internal/entity"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 type WeatherService struct {
@@ -16,7 +17,9 @@ type WeatherService struct {
 
 func NewWeatherService() *WeatherService {
 	return &WeatherService{
-		client: &http.Client{},
+		client: &http.Client{
+			Transport: otelhttp.NewTransport(http.DefaultTransport),
+		},
 	}
 }
 

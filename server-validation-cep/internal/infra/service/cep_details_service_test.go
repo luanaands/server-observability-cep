@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -18,8 +19,8 @@ func TestGetCepDetails(t *testing.T) {
 	}))
 	defer server.Close()
 
-	s := &CepDetailsService{}
-	resp, err := s.GetCepDetails("01001000", server.URL)
+	s := NewCepDetailsService()
+	resp, err := s.GetCepDetails(context.Background(), "01001000", server.URL)
 	require.NoError(t, err)
 	assert.Equal(t, "Sao Paulo", resp.City)
 	assert.Equal(t, 25.5, resp.TempC)

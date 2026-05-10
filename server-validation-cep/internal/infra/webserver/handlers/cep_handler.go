@@ -4,18 +4,22 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/luanaands/server-validation-cep/internal/dto"
 	"github.com/luanaands/server-validation-cep/internal/infra/service"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 type CepHandler struct {
 	Service service.CepDetailsInterface
+	Config  *dto.TemplateData
 }
 
-func NewCepHandler(service service.CepDetailsInterface) *CepHandler {
+func NewCepHandler(service service.CepDetailsInterface, config *dto.TemplateData) *CepHandler {
 	return &CepHandler{
 		Service: service,
+		Config:  config,
 	}
 }
 
@@ -28,6 +32,19 @@ func NewCepHandler(service service.CepDetailsInterface) *CepHandler {
 // @Router /cep [post]
 func (h *CepHandler) GetCep(w http.ResponseWriter, r *http.Request) {
 	myHost := r.Context().Value("MyCoreHost").(string)
+	ctx := r.Context()
+	spanName := strings.TrimSpace(h.Config.Title)
+	if spanName == "" {
+		spanName = "Service A"
+	}
+	ctx, span := h.Config.OTELTracer.Start(ctx, spanName+" - "+h.Config.ExternalCallMethod+" /cep")
+	span.SetAttributes(
+		attribute.String("service.title", h.Config.Title),
+		attribute.String("service.background_color", h.Config.BackgroundColor),
+		attribute.String("service.external_call_url", h.Config.ExternalCallURL),
+		attribute.String("service.external_call_method", h.Config.ExternalCallMethod),
+	)
+	defer span.End()
 
 	var request dto.CepRequest
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
@@ -49,7 +66,7 @@ func (h *CepHandler) GetCep(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := h.Service.GetCepDetails(cep, myHost)
+	result, err := h.Service.GetCepDetails(ctx, cep, myHost)
 	if err != nil {
 		if err == service.ErrZipcodeNotFound {
 			w.WriteHeader(http.StatusNotFound)

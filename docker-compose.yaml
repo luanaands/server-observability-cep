@@ -7,9 +7,20 @@ services:
     ports:
       - "8081:8081"
     environment:
+      - TITLE=Service B
+      - BACKGROUND_COLOR=#ff0000
+      - EXTENAL_CALL_URL=
+      - EXTERNAL_CALL_METHOD=
+      - REQUEST_NAME_OTEL=GetCep
       - VIA_CEP_API_HOST=http://viacep.com.br/ws/
       - API_WEATHER_HOST=http://api.weatherapi.com/v1/current.json
       - API_WEATHER_KEY=126619bcfb2b4ddcba1203902261704
+      - OTEL_EXPORTER_OTLP_ENDPOINT=otel-collector:4317
+      - OTEL_SERVICE_NAME=server-core-cep
+    depends_on:
+      - otel-collector
+      - Zipkin
+
   server-validation-cep:
     build: 
       context: ./server-validation-cep
@@ -18,6 +29,33 @@ services:
     ports:
       - "8082:8082"
     environment:
+      - TITLE=Service A
+      - BACKGROUND_COLOR=#0000ff
+      - EXTENAL_CALL_URL=http://localhost:8081/cep
+      - EXTERNAL_CALL_METHOD=POST
       - MY_CORE_HOST=http://server-core-cep:8081/cep
+      - OTEL_EXPORTER_OTLP_ENDPOINT=otel-collector:4317
+      - OTEL_SERVICE_NAME=server-validation-cep
     depends_on:
       - server-core-cep
+      - otel-collector
+      - Zipkin
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.80.0
+    container_name: otel-collector
+    ports:
+      - "4317:4317"
+    volumes:
+      - ./.docker/otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    depends_on:
+      - zipkin
+
+  Zipkin:
+    image: openzipkin/zipkin:latest
+    restart: always
+    container_name: zipkin
+    ports:
+      - "9411:9411"
+

@@ -5,21 +5,25 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/luanaands/server-core-cep/internal/dto"
 	"github.com/luanaands/server-core-cep/internal/infra/service"
 	zipcode "github.com/luanaands/server-core-cep/internal/zipecode"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 type CepHandler struct {
 	Service        service.CepInterface
 	WeatherService service.WeatherInterface
+	config         *dto.TemplateData
 }
 
-func NewCepHandler(service service.CepInterface, weatherService service.WeatherInterface) *CepHandler {
+func NewCepHandler(service service.CepInterface, weatherService service.WeatherInterface, config *dto.TemplateData) *CepHandler {
 	return &CepHandler{
 		Service:        service,
 		WeatherService: weatherService,
+		config:         config,
 	}
 }
 
@@ -34,6 +38,20 @@ func (h *CepHandler) GetCep(w http.ResponseWriter, r *http.Request) {
 	viaCepUrl := r.Context().Value("ViaCepHost").(string)
 	apiWeatherHost := r.Context().Value("ApiWeatherHost").(string)
 	apiWeatherKey := r.Context().Value("ApiWeatherKey").(string)
+
+	ctx := r.Context()
+	spanName := strings.TrimSpace(h.config.Title)
+	if spanName == "" {
+		spanName = "Service B"
+	}
+	ctx, span := h.config.OTELTracer.Start(ctx, spanName+" - "+h.config.RequestNameOTEL)
+	span.SetAttributes(
+		attribute.String("service.title", h.config.Title),
+		attribute.String("service.background_color", h.config.BackgroundColor),
+		attribute.String("service.external_call_url", h.config.ExternalCallURL),
+		attribute.String("service.external_call_method", h.config.ExternalCallMethod),
+	)
+	defer span.End()
 
 	var req dto.CepRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {

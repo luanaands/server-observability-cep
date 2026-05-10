@@ -1,15 +1,29 @@
 package main
 
 import (
+	"context"
+	"fmt"
+	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/luanaands/server-core-cep/configs"
 	_ "github.com/luanaands/server-core-cep/docs"
+	"github.com/luanaands/server-core-cep/internal/dto"
 	"github.com/luanaands/server-core-cep/internal/infra/service"
 	"github.com/luanaands/server-core-cep/internal/infra/webserver/handlers"
 	httpSwagger "github.com/swaggo/http-swagger"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/sdk/resource"
+	tracesdk "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 )
 
 // @title Desafio CEP API - golang
@@ -24,9 +38,36 @@ import (
 // @schemes https
 // @basePath /
 func main() {
-	configs, err := configs.LoadConfig(".")
+	configs, err := configs.LoadConfig()
 	if err != nil {
 		panic(err)
+	}
+
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, os.Interrupt)
+
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer cancel()
+
+	shutdown, err := initProvider(configs.OtelServiceName, configs.OtelExporterOtlpEndpoint)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer func() {
+		if err := shutdown(context.Background()); err != nil {
+			log.Printf("Error shutting down tracer provider: %v", err)
+		}
+	}()
+
+	tracer := otel.Tracer("service-tracer")
+
+	templateData := &dto.TemplateData{
+		Title:              configs.Title,
+		BackgroundColor:    configs.BackgroundColor,
+		ExternalCallURL:    configs.ExternalCallURL,
+		ExternalCallMethod: configs.ExternalCallMethod,
+		RequestNameOTEL:    configs.RequestNameOTEL,
+		OTELTracer:         tracer,
 	}
 
 	r := chi.NewRouter()
@@ -38,11 +79,71 @@ func main() {
 
 	var cepService service.CepInterface = service.NewCepService()
 	var weatherService service.WeatherInterface = service.NewWeatherService()
-	handler := handlers.NewCepHandler(cepService, weatherService)
+	myhandler := handlers.NewCepHandler(cepService, weatherService, templateData)
 
-	r.Post("/cep", handler.GetCep)
+	r.Post("/cep", myhandler.GetCep)
 
 	r.Get("/docs/*", httpSwagger.Handler(httpSwagger.URL("http://localhost:8081/docs/doc.json")))
+	// Instrumenta todas as rotas HTTP
+	handler := otelhttp.NewHandler(r, "http-server")
 
-	http.ListenAndServe(":8081", r)
+	go func() {
+		log.Println("Server is running on port 8081")
+		if err = http.ListenAndServe(":8081", handler); err != nil {
+			log.Fatal(err)
+		}
+	}()
+
+	select {
+	case <-sigCh:
+		log.Println("Shutting down gracefully...")
+	case <-ctx.Done():
+		log.Println("Shutting down due to other reason")
+	}
+
+	_, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer shutdownCancel()
+}
+
+func initProvider(serviceName, collectorURL string) (func(context.Context) error, error) {
+	ctx := context.Background()
+
+	res, erro := resource.New(ctx,
+		resource.WithAttributes(
+			semconv.ServiceName(serviceName),
+		),
+	)
+	if erro != nil {
+		return nil, fmt.Errorf("failed to create resource: %w", erro)
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, time.Second)
+	defer cancel()
+
+	exporter, err := otlptracegrpc.New(
+		ctx,
+		otlptracegrpc.WithEndpoint(collectorURL),
+		otlptracegrpc.WithInsecure(),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create OTLP exporter: %w", err)
+	}
+
+	bsp := tracesdk.NewSimpleSpanProcessor(exporter)
+	tracerProvider := tracesdk.NewTracerProvider(
+		tracesdk.WithBatcher(exporter),
+		tracesdk.WithResource(res),
+		tracesdk.WithSampler(tracesdk.AlwaysSample()),
+		tracesdk.WithSpanProcessor(bsp),
+	)
+	otel.SetTracerProvider(tracerProvider)
+
+	otel.SetTextMapPropagator(
+		propagation.NewCompositeTextMapPropagator(
+			propagation.TraceContext{},
+			propagation.Baggage{},
+		),
+	)
+
+	return tracerProvider.Shutdown, nil
 }

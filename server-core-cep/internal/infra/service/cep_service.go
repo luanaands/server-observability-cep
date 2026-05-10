@@ -9,6 +9,7 @@ import (
 	"github.com/luanaands/server-core-cep/internal/dto"
 	"github.com/luanaands/server-core-cep/internal/entity"
 	zipcode "github.com/luanaands/server-core-cep/internal/zipecode"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 type CepService struct {
@@ -17,7 +18,9 @@ type CepService struct {
 
 func NewCepService() *CepService {
 	return &CepService{
-		client: &http.Client{},
+		client: &http.Client{
+			Transport: otelhttp.NewTransport(http.DefaultTransport),
+		},
 	}
 }
 
