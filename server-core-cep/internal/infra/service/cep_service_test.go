@@ -37,6 +37,6 @@ func TestGetViaCepError(t *testing.T) {
 
 	s := &CepService{client: ts.Client()}
 	resp, err := s.GetViaCep("01001000", ts.URL)
-	assert.Contains(t, err.Error(), "can not find zipcode")
+	assert.Contains(t, err.Error(), "zipcode not found")
 	assert.Nil(t, resp)
 }

@@ -16,14 +16,14 @@ import (
 type CepHandler struct {
 	Service        service.CepInterface
 	WeatherService service.WeatherInterface
-	config         *dto.TemplateData
+	Config         *dto.TemplateData
 }
 
 func NewCepHandler(service service.CepInterface, weatherService service.WeatherInterface, config *dto.TemplateData) *CepHandler {
 	return &CepHandler{
 		Service:        service,
 		WeatherService: weatherService,
-		config:         config,
+		Config:         config,
 	}
 }
 
@@ -40,16 +40,16 @@ func (h *CepHandler) GetCep(w http.ResponseWriter, r *http.Request) {
 	apiWeatherKey := r.Context().Value("ApiWeatherKey").(string)
 
 	ctx := r.Context()
-	spanName := strings.TrimSpace(h.config.Title)
+	spanName := strings.TrimSpace(h.Config.Title)
 	if spanName == "" {
 		spanName = "Service B"
 	}
-	ctx, span := h.config.OTELTracer.Start(ctx, spanName+" - "+h.config.RequestNameOTEL)
+	ctx, span := h.Config.OTELTracer.Start(ctx, spanName+" - "+h.Config.RequestNameOTEL)
 	span.SetAttributes(
-		attribute.String("service.title", h.config.Title),
-		attribute.String("service.background_color", h.config.BackgroundColor),
-		attribute.String("service.external_call_url", h.config.ExternalCallURL),
-		attribute.String("service.external_call_method", h.config.ExternalCallMethod),
+		attribute.String("service.title", h.Config.Title),
+		attribute.String("service.background_color", h.Config.BackgroundColor),
+		attribute.String("service.external_call_url", h.Config.ExternalCallURL),
+		attribute.String("service.external_call_method", h.Config.ExternalCallMethod),
 	)
 	defer span.End()
 
