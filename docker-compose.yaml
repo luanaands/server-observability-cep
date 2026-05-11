@@ -19,7 +19,7 @@ services:
       - OTEL_SERVICE_NAME=server-core-cep
     depends_on:
       - otel-collector
-      - Zipkin
+      - zipkin
 
   server-validation-cep:
     build: 
@@ -39,10 +39,10 @@ services:
     depends_on:
       - server-core-cep
       - otel-collector
-      - Zipkin
+      - zipkin
 
   otel-collector:
-    image: otel/opentelemetry-collector-contrib:0.80.0
+    image: otel/opentelemetry-collector-contrib:latest
     container_name: otel-collector
     ports:
       - "4317:4317"
@@ -52,7 +52,7 @@ services:
     depends_on:
       - zipkin
 
-  Zipkin:
+  zipkin:
     image: openzipkin/zipkin:latest
     restart: always
     container_name: zipkin

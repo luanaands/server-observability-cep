@@ -73,7 +73,7 @@ type mockCepService struct {
 	err      error
 }
 
-func (m *mockCepService) GetViaCep(cep, url string) (*dto.CepResponse, error) {
+func (m *mockCepService) GetViaCep(ctx context.Context, cep, url string) (*dto.CepResponse, error) {
 	return m.response, m.err
 }
 
@@ -82,7 +82,7 @@ type mockWeatherService struct {
 	err      error
 }
 
-func (m *mockWeatherService) GetWeather(city, key, host string) (*dto.WeatherResponse, error) {
+func (m *mockWeatherService) GetWeather(ctx context.Context, city, key, host string) (*dto.WeatherResponse, error) {
 	return m.response, m.err
 }
 

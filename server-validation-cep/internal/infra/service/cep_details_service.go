@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/luanaands/server-validation-cep/internal/dto"
 	"github.com/luanaands/server-validation-cep/internal/entity"
@@ -24,6 +25,7 @@ func NewCepDetailsService() *CepDetailsService {
 	return &CepDetailsService{
 		client: &http.Client{
 			Transport: otelhttp.NewTransport(http.DefaultTransport),
+			Timeout:   3 * time.Second,
 		},
 	}
 }

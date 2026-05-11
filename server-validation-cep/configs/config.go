@@ -19,14 +19,28 @@ type Conf struct {
 
 func LoadConfig() (*Conf, error) {
 	var cfg *Conf
+
+	// Configurar viper para ler variáveis de ambiente
 	viper.SetConfigName("app_config")
 	viper.SetConfigType("env")
+	viper.AddConfigPath(".")
+	viper.AddConfigPath("./configs")
 	viper.AutomaticEnv()
-	err := viper.ReadInConfig()
-	if err != nil {
-		panic(err)
-	}
-	err = viper.Unmarshal(&cfg)
+
+	// Tentar ler arquivo de config se existir (opcional)
+	_ = viper.ReadInConfig()
+
+	// Bind explícito das variáveis de ambiente
+	viper.BindEnv("MY_CORE_HOST", "MY_CORE_HOST")
+	viper.BindEnv("OTEL_EXPORTER_OTLP_ENDPOINT", "OTEL_EXPORTER_OTLP_ENDPOINT")
+	viper.BindEnv("OTEL_SERVICE_NAME", "OTEL_SERVICE_NAME")
+	viper.BindEnv("TITLE", "TITLE")
+	viper.BindEnv("BACKGROUND_COLOR", "BACKGROUND_COLOR")
+	viper.BindEnv("EXTERNAL_CALL_URL", "EXTERNAL_CALL_URL")
+	viper.BindEnv("EXTERNAL_CALL_METHOD", "EXTERNAL_CALL_METHOD")
+	viper.BindEnv("REQUEST_NAME_OTEL", "REQUEST_NAME_OTEL")
+
+	err := viper.Unmarshal(&cfg)
 	if err != nil {
 		panic(err)
 	}

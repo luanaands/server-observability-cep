@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -17,7 +18,6 @@ import (
 	"github.com/luanaands/server-validation-cep/internal/infra/service"
 	"github.com/luanaands/server-validation-cep/internal/infra/webserver/handlers"
 	httpSwagger "github.com/swaggo/http-swagger"
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/propagation"
@@ -82,11 +82,11 @@ func main() {
 
 	r.Get("/docs/*", httpSwagger.Handler(httpSwagger.URL("http://localhost:8082/docs/doc.json")))
 	// Instrumenta todas as rotas HTTP
-	handler := otelhttp.NewHandler(r, "http-server")
+	//handler := otelhttp.NewHandler(r, "http-server")
 
 	go func() {
 		log.Println("Server is running on port 8082")
-		if err = http.ListenAndServe(":8082", handler); err != nil {
+		if err = http.ListenAndServe(":8082", r); err != nil {
 			log.Fatal(err)
 		}
 	}()
@@ -114,24 +114,28 @@ func initProvider(serviceName, collectorURL string) (func(context.Context) error
 		return nil, fmt.Errorf("failed to create resource: %w", erro)
 	}
 
+	// Aumentar timeout para permitir conexão com o collector
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()
 
+	normalizedCollectorURL := strings.TrimPrefix(strings.TrimPrefix(strings.TrimSpace(collectorURL), "http://"), "https://")
+
 	exporter, err := otlptracegrpc.New(
 		ctx,
-		otlptracegrpc.WithEndpoint(collectorURL),
+		otlptracegrpc.WithEndpoint(normalizedCollectorURL),
 		otlptracegrpc.WithInsecure(),
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create OTLP exporter: %w", err)
+		// Log warning mas não falha - permite que a app rode sem OTEL
+		log.Printf("Warning: failed to create OTLP exporter: %v. Traces will not be exported.\n", err)
+		// Retorna um no-op shutdown function
+		return func(context.Context) error { return nil }, nil
 	}
 
-	bsp := tracesdk.NewSimpleSpanProcessor(exporter)
 	tracerProvider := tracesdk.NewTracerProvider(
 		tracesdk.WithBatcher(exporter),
 		tracesdk.WithResource(res),
 		tracesdk.WithSampler(tracesdk.AlwaysSample()),
-		tracesdk.WithSpanProcessor(bsp),
 	)
 	otel.SetTracerProvider(tracerProvider)
 

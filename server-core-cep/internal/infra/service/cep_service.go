@@ -1,10 +1,12 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/luanaands/server-core-cep/internal/dto"
 	"github.com/luanaands/server-core-cep/internal/entity"
@@ -20,12 +22,13 @@ func NewCepService() *CepService {
 	return &CepService{
 		client: &http.Client{
 			Transport: otelhttp.NewTransport(http.DefaultTransport),
+			Timeout:   3 * time.Second,
 		},
 	}
 }
 
-func (s *CepService) GetViaCep(cep string, url string) (*dto.CepResponse, error) {
-	req, err := http.NewRequest("GET", url+"/"+cep+"/json", nil)
+func (s *CepService) GetViaCep(ctx context.Context, cep string, url string) (*dto.CepResponse, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", url+"/"+cep+"/json", nil)
 	if err != nil {
 		return nil, err
 	}

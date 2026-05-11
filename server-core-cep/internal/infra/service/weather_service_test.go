@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -70,7 +71,7 @@ func TestGetWeather(t *testing.T) {
 	defer ts.Close()
 
 	s := &WeatherService{client: ts.Client()}
-	resp, err := s.GetWeather("São Paulo", "fakekey", ts.URL)
+	resp, err := s.GetWeather(context.Background(), "São Paulo", "fakekey", ts.URL)
 	assert.Nil(t, err)
 	assert.Equal(t, resp.TempC, 21.3)
 	assert.Equal(t, resp.TempF, 70.3)

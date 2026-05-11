@@ -73,7 +73,7 @@ func (h *CepHandler) GetCep(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	viaCepResponse, err := h.Service.GetViaCep(cep, viaCepUrl)
+	viaCepResponse, err := h.Service.GetViaCep(ctx, cep, viaCepUrl)
 	if err != nil {
 		if errors.Is(err, zipcode.ErrZipcodeNotFound) {
 			w.WriteHeader(http.StatusNotFound)
@@ -85,7 +85,7 @@ func (h *CepHandler) GetCep(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	realtimeWeather, err := h.WeatherService.GetWeather(viaCepResponse.Localidade, apiWeatherKey, apiWeatherHost)
+	realtimeWeather, err := h.WeatherService.GetWeather(ctx, viaCepResponse.Localidade, apiWeatherKey, apiWeatherHost)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]string{"error": "internal server error"})

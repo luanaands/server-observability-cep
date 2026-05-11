@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -20,7 +21,7 @@ func TestGetViaCep(t *testing.T) {
 	defer ts.Close()
 
 	s := &CepService{client: ts.Client()}
-	resp, err := s.GetViaCep("01001000", ts.URL)
+	resp, err := s.GetViaCep(context.Background(), "01001000", ts.URL)
 	assert.Nil(t, err)
 	assert.Equal(t, resp.Localidade, "São Paulo")
 }
@@ -36,7 +37,7 @@ func TestGetViaCepError(t *testing.T) {
 	defer ts.Close()
 
 	s := &CepService{client: ts.Client()}
-	resp, err := s.GetViaCep("01001000", ts.URL)
+	resp, err := s.GetViaCep(context.Background(), "01001000", ts.URL)
 	assert.Contains(t, err.Error(), "zipcode not found")
 	assert.Nil(t, resp)
 }

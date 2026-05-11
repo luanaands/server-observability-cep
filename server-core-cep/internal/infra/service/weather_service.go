@@ -1,10 +1,12 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/luanaands/server-core-cep/internal/dto"
 	"github.com/luanaands/server-core-cep/internal/entity"
@@ -19,11 +21,12 @@ func NewWeatherService() *WeatherService {
 	return &WeatherService{
 		client: &http.Client{
 			Transport: otelhttp.NewTransport(http.DefaultTransport),
+			Timeout:   3 * time.Second,
 		},
 	}
 }
 
-func (s *WeatherService) GetWeather(city string, apiKey string, baseURL string) (*dto.WeatherResponse, error) {
+func (s *WeatherService) GetWeather(ctx context.Context, city string, apiKey string, baseURL string) (*dto.WeatherResponse, error) {
 	u, err := url.Parse(baseURL)
 	if err != nil {
 		return nil, err
@@ -34,7 +37,7 @@ func (s *WeatherService) GetWeather(city string, apiKey string, baseURL string) 
 	q.Set("q", city)
 	u.RawQuery = q.Encode()
 
-	req, err := http.NewRequest("GET", u.String(), nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", u.String(), nil)
 	if err != nil {
 		return nil, err
 	}
