@@ -8,7 +8,7 @@ services:
       - "8081:8081"
     environment:
       - TITLE=Service B
-      - BACKGROUND_COLOR=#ff0000
+      - BACKGROUND_COLOR=#blue
       - EXTENAL_CALL_URL=
       - EXTERNAL_CALL_METHOD=
       - REQUEST_NAME_OTEL=GetCep
@@ -30,7 +30,7 @@ services:
       - "8082:8082"
     environment:
       - TITLE=Service A
-      - BACKGROUND_COLOR=#0000ff
+      - BACKGROUND_COLOR=#red
       - EXTENAL_CALL_URL=http://localhost:8081/cep
       - EXTERNAL_CALL_METHOD=POST
       - MY_CORE_HOST=http://server-core-cep:8081/cep

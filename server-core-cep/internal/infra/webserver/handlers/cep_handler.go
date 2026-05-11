@@ -73,7 +73,15 @@ func (h *CepHandler) GetCep(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	viaCepResponse, err := h.Service.GetViaCep(ctx, cep, viaCepUrl)
+	viaCepCtx, viaCepSpan := h.Config.OTELTracer.Start(ctx, "viacep.lookup")
+	viaCepSpan.SetAttributes(
+		attribute.String("external.system", "viacep"),
+		attribute.String("external.operation", "lookup_zipcode"),
+		attribute.String("zipcode", cep),
+	)
+
+	viaCepResponse, err := h.Service.GetViaCep(viaCepCtx, cep, viaCepUrl)
+	viaCepSpan.End()
 	if err != nil {
 		if errors.Is(err, zipcode.ErrZipcodeNotFound) {
 			w.WriteHeader(http.StatusNotFound)
@@ -84,8 +92,14 @@ func (h *CepHandler) GetCep(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(map[string]string{"error": "internal server error"})
 		return
 	}
-
-	realtimeWeather, err := h.WeatherService.GetWeather(ctx, viaCepResponse.Localidade, apiWeatherKey, apiWeatherHost)
+	weatherCtx, weatherSpan := h.Config.OTELTracer.Start(ctx, "weatherapi.lookup")
+	weatherSpan.SetAttributes(
+		attribute.String("external.system", "weatherapi"),
+		attribute.String("external.operation", "lookup_weather"),
+		attribute.String("city", viaCepResponse.Localidade),
+	)
+	realtimeWeather, err := h.WeatherService.GetWeather(weatherCtx, viaCepResponse.Localidade, apiWeatherKey, apiWeatherHost)
+	weatherSpan.End()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]string{"error": "internal server error"})

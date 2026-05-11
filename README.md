@@ -1,137 +1,177 @@
-# Desafio weather API - Go
+# Server Observability - CEP e Clima com Tracing
 
-API para tempo real, integrando dados de **WeatherAPI** e **ViaCEP**.
+Projeto em Go com duas APIs que consultam CEP e clima em tempo real, com observabilidade distribuida usando OpenTelemetry + Zipkin.
 
-## 🚀 Descrição
+## Descricao
 
-Projeto desenvolvido em Go que implementa uma API RESTful para buscar informações de dados climáticos em tempo real através do código de endereçamento postal (CEP). A aplicação integra **ViaCEP** para dados de endereços e **WeatherAPI** para informações climáticas, realizando requisições paralelas para otimizar o tempo de resposta.
+Arquitetura do fluxo:
 
-## 📋 Pré-requisitos
+1. `server-validation-cep` (Service A) recebe o CEP em `POST /cep`.
+2. Service A chama o `server-core-cep` (Service B).
+3. Service B consulta ViaCEP e WeatherAPI e retorna cidade e temperaturas.
+4. Os spans sao enviados para o OpenTelemetry Collector via OTLP gRPC (`4317`).
+5. O Collector exporta os traces para o Zipkin.
 
-- Go 1.21 ou superior
-- Git
-- Docker (opcional, para execução via container)
+## Componentes existentes
 
-## 🏃 Como Executar o Servidor
+- `server-validation-cep`:
+  - Porta `8082`
+  - Endpoint principal: `POST /cep`
+  - Valida CEP e orquestra chamada para o Service B
+- `server-core-cep`:
+  - Porta `8081`
+  - Endpoint principal: `POST /cep`
+  - Consulta ViaCEP e WeatherAPI
+  - Spans de negocio para chamadas externas: `viacep.lookup` e `weatherapi.lookup`
+- `otel-collector`:
+  - Porta `4317` (OTLP gRPC)
+  - Config em `./.docker/otel-collector-config.yaml`
+  - Receiver configurado para `0.0.0.0:4317`
+- `zipkin`:
+  - UI em `http://localhost:9411`
+  - Recebe spans do Collector
 
+## Pre-requisitos
 
-1. Instale as dependências
-   ```bash
-   go mod tidy
-   ```
+- Docker + Docker Compose
+- Go `1.25+` (apenas se for executar local sem Docker)
 
-2. Vá até o caminho /cmd/server 
- ```
- cd cmd/server
- ```
+## Como executar (recomendado: Docker Compose)
 
-3. Configure as variáveis de ambiente (crie um arquivo `.env`) no caminho /cmd/server
-   ```env
-   VIA_CEP_API_HOST=https://viacep.com.br/ws
-   API_WEATHER_HOST=https://api.weatherapi.com/v1/current.json
-   API_WEATHER_KEY=sua_chave_de_api_aqui
-   ```
-
-   **Nota:** API_WEATHER_KEY: Obtenha sua chave gratuita fazendo login em https://www.weatherapi.com/
-
-4. Execute o servidor
-   ```bash
-   go run main.go
-   ```
-
-O servidor estará disponível em `http://localhost:8080`
-
-## 🐳 Como Executar com Docker
-
-1. Construa a imagem Docker:
-   ```bash
-   docker build -t weather-api .
-   ```
-
-2. Execute o container:
-   ```bash
-   docker run -p 8080:8080 --env-file cmd/server/.env weather-api
-   ```
-
-O servidor estará disponível em `http://localhost:8080`
-
-## 🧪 Como Rodar os Testes
-
-Para executar todos os testes do projeto:
+No diretorio raiz do projeto:
 
 ```bash
-go test ./...
+docker compose up --build -d
 ```
 
-Para rodar testes de um pacote específico:
+Verificar status dos containers:
 
 ```bash
-go test ./internal/infra/service/...
+docker compose ps
 ```
 
-Para rodar testes com cobertura de código:
+Parar o ambiente:
 
 ```bash
-go test -cover ./...
+docker compose down
 ```
 
-## 📚 Como Abrir o Swagger
+## Como executar sem Docker (opcional)
 
-Com o servidor executando, acesse a documentação da API no seu navegador:
+### 1) Service B (`server-core-cep`)
 
-```
-http://localhost:8080/docs/index.html
-```
-
-Lá você encontrará:
-- ✅ Todos os endpoints disponíveis
-- ✅ Modelos de requisição e resposta
-- ✅ Exemplos de uso
-- ✅ Possibilidade de testar os endpoints diretamente
-
-## 🔌 Como Usar Extensão HTTP REST
-
-### Usando a extensão REST Client
-
-1. **Instale a extensão** no VS Code:
-   - Procure por "REST Client" (publicada por Huachao Mao)
-   - Ou execute: `ext install humao.rest-client`
-
-2. **Use o arquivo** `test/cep.http` incluído no projeto:
-   - Abra o arquivo `test/cep.http`
-   - Clique em "Send Request" (ou use `Ctrl+Alt+R`)
-   - Veja a resposta no painel de output
-
-3. **Exemplo de requisição**:
-   ```http
-   GET http://localhost:8080/weather?cep=01001000 HTTP/1.1
-   ```
-
-## 🌐 Como Testar a API Implantada
-
-A API está implantada no Google Cloud Run e pode ser testada diretamente:
-
-- **Swagger**: https://server-core-cep-mepu6h3qaa-uc.a.run.app/docs/index.html
-
-- **Exemplo de requisição**:
-  ```http
-  GET https://server-core-cep-mepu6h3qaa-uc.a.run.app/weather?cep=01001000 HTTP/1.1
-  ```
-
-## 📝 Endpoints Disponíveis
-
-### Buscar Dados Climáticos
-```
-GET /weather?cep=01001000
+```bash
+cd server-core-cep
+go mod tidy
 ```
 
-Retorna informações dos dados climáticos (temperatura em graus Celsius, Fahrenheit e Kelvin) em tempo real da localidade via WeatherAPI.
+Variaveis minimas:
 
+```env
+VIA_CEP_API_HOST=http://viacep.com.br/ws/
+API_WEATHER_HOST=http://api.weatherapi.com/v1/current.json
+API_WEATHER_KEY=<SUA_CHAVE>
+OTEL_EXPORTER_OTLP_ENDPOINT=localhost:4317
+OTEL_SERVICE_NAME=server-core-cep
+REQUEST_NAME_OTEL=GetCep
+TITLE=Service B
+```
 
-## 📞 Contato
+Executar:
+
+```bash
+go run cmd/server/main.go
+```
+
+### 2) Service A (`server-validation-cep`)
+
+```bash
+cd server-validation-cep
+go mod tidy
+```
+
+Variaveis minimas:
+
+```env
+MY_CORE_HOST=http://localhost:8081/cep
+OTEL_EXPORTER_OTLP_ENDPOINT=localhost:4317
+OTEL_SERVICE_NAME=server-validation-cep
+EXTERNAL_CALL_METHOD=POST
+TITLE=Service A
+```
+
+Executar:
+
+```bash
+go run cmd/server/main.go
+```
+
+## Como testar os endpoints
+
+Fluxo completo (recomendado - entra pelo Service A):
+
+```bash
+curl -X POST http://localhost:8082/cep \
+  -H "Content-Type: application/json" \
+  -d '{"cep":"41720000"}'
+```
+
+Teste direto no Service B:
+
+```bash
+curl -X POST http://localhost:8081/cep \
+  -H "Content-Type: application/json" \
+  -d '{"cep":"01001201"}'
+```
+
+Arquivos HTTP de apoio:
+
+- `server-validation-cep/test/cep.http`
+- `server-core-cep/test/cep.http`
+
+## Swagger
+
+- Service A: `http://localhost:8082/docs/index.html`
+- Service B: `http://localhost:8081/docs/index.html`
+
+## Como verificar os traces
+
+1. Suba os servicos com `docker compose up --build -d`.
+2. Gere trafego com uma requisicao `POST /cep` no Service A.
+3. Abra o Zipkin em `http://localhost:9411`.
+4. Filtre por servico:
+   - `server-validation-cep`
+   - `server-core-cep`
+5. Abra um trace e valide:
+   - Span do Service A (entrada e chamada para Service B)
+   - Span principal do Service B
+   - Spans filhos de negocio no Service B:
+     - `viacep.lookup`
+     - `weatherapi.lookup`
+   - Spans HTTP automaticos (instrumentacao `otelhttp`) para chamadas externas
+
+## Troubleshooting de traces
+
+Se aparecer erro como `connection refused` ao exportar traces:
+
+- Verifique se o `otel-collector` esta rodando (`docker compose ps`).
+- Verifique logs do collector (`docker compose logs otel-collector`).
+- Confirme em `./.docker/otel-collector-config.yaml` que o receiver gRPC esta em `0.0.0.0:4317`.
+- Recrie o collector se necessario:
+
+```bash
+docker compose up -d --force-recreate otel-collector
+```
+
+## Testes
+
+Rodar testes por modulo:
+
+```bash
+cd server-core-cep && go test ./...
+cd ../server-validation-cep && go test ./...
+```
+
+## Contato
 
 Desenvolvido por Luana Andrade - luanaands@gmail.com
-
----
-
-**Aproveite! 🚀**
