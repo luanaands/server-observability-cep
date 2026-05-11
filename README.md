@@ -172,19 +172,6 @@ Arquivos HTTP de apoio:
      - chamada Service B -> ViaCEP
      - chamada Service B -> WeatherAPI
 
-## Troubleshooting de traces
-
-Se aparecer erro como `connection refused` ao exportar traces:
-
-- Verifique se o `otel-collector` esta rodando (`docker compose ps`).
-- Verifique logs do collector (`docker compose logs otel-collector`).
-- Confirme em `./.docker/otel-collector-config.yaml` que o receiver gRPC esta em `0.0.0.0:4317`.
-- Se o trace estiver quebrado entre Service A e B, confirme que as requisicoes entram por `POST /cep` (rota instrumentada com `otelhttp.NewHandler`) nos dois servicos.
-- Recrie o collector se necessario:
-
-```bash
-docker compose up -d --force-recreate otel-collector
-```
 
 ## Testes
 
