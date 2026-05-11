@@ -18,6 +18,7 @@ import (
 	"github.com/luanaands/server-core-cep/internal/infra/service"
 	"github.com/luanaands/server-core-cep/internal/infra/webserver/handlers"
 	httpSwagger "github.com/swaggo/http-swagger"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/propagation"
@@ -79,7 +80,7 @@ func main() {
 	var weatherService service.WeatherInterface = service.NewWeatherService()
 	myhandler := handlers.NewCepHandler(cepService, weatherService, templateData)
 
-	r.Post("/cep", myhandler.GetCep)
+	r.Method(http.MethodPost, "/cep", otelhttp.NewHandler(http.HandlerFunc(myhandler.GetCep), "service-b.request /cep"))
 
 	r.Get("/docs/*", httpSwagger.Handler(httpSwagger.URL("http://localhost:8081/docs/doc.json")))
 

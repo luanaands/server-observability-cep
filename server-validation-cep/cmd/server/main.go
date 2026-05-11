@@ -18,6 +18,7 @@ import (
 	"github.com/luanaands/server-validation-cep/internal/infra/service"
 	"github.com/luanaands/server-validation-cep/internal/infra/webserver/handlers"
 	httpSwagger "github.com/swaggo/http-swagger"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/propagation"
@@ -75,7 +76,7 @@ func main() {
 	var cepService service.CepDetailsInterface = service.NewCepDetailsService()
 	handlerCep := handlers.NewCepHandler(cepService, templateData)
 
-	r.Post("/cep", handlerCep.GetCep)
+	r.Method(http.MethodPost, "/cep", otelhttp.NewHandler(http.HandlerFunc(handlerCep.GetCep), "service-a.request /cep"))
 
 	r.Get("/docs/*", httpSwagger.Handler(httpSwagger.URL("http://localhost:8082/docs/doc.json")))
 
