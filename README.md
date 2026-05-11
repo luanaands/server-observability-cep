@@ -9,8 +9,9 @@ Arquitetura do fluxo:
 1. `server-validation-cep` (Service A) recebe o CEP em `POST /cep`.
 2. Service A chama o `server-core-cep` (Service B).
 3. Service B consulta ViaCEP e WeatherAPI e retorna cidade e temperaturas.
-4. Os spans sao enviados para o OpenTelemetry Collector via OTLP gRPC (`4317`).
-5. O Collector exporta os traces para o Zipkin.
+4. A entrada HTTP dos dois servicos esta instrumentada com `otelhttp.NewHandler`, preservando o contexto de trace entre Service A e Service B.
+5. Os spans sao enviados para o OpenTelemetry Collector via OTLP gRPC (`4317`).
+6. O Collector exporta os traces para o Zipkin.
 
 ## Componentes existentes
 
@@ -18,10 +19,12 @@ Arquitetura do fluxo:
   - Porta `8082`
   - Endpoint principal: `POST /cep`
   - Valida CEP e orquestra chamada para o Service B
+  - Entrada HTTP instrumentada com `otelhttp.NewHandler` (span `service-a.request /cep`)
 - `server-core-cep`:
   - Porta `8081`
   - Endpoint principal: `POST /cep`
   - Consulta ViaCEP e WeatherAPI
+  - Entrada HTTP instrumentada com `otelhttp.NewHandler` (span `service-b.request /cep`)
   - Spans de negocio para chamadas externas: `viacep.lookup` e `weatherapi.lookup`
 - `otel-collector`:
   - Porta `4317` (OTLP gRPC)
@@ -73,9 +76,12 @@ API_WEATHER_HOST=http://api.weatherapi.com/v1/current.json
 API_WEATHER_KEY=<SUA_CHAVE>
 OTEL_EXPORTER_OTLP_ENDPOINT=localhost:4317
 OTEL_SERVICE_NAME=server-core-cep
-REQUEST_NAME_OTEL=GetCep
 TITLE=Service B
 ```
+
+No `docker-compose.yaml`, esse mesmo servico usa `TITLE=service-b` por padrao.
+
+No `docker-compose.yaml`, o valor padrao de `TITLE` para esse servico esta como `service-b`.
 
 Executar:
 
@@ -96,8 +102,21 @@ Variaveis minimas:
 MY_CORE_HOST=http://localhost:8081/cep
 OTEL_EXPORTER_OTLP_ENDPOINT=localhost:4317
 OTEL_SERVICE_NAME=server-validation-cep
-EXTERNAL_CALL_METHOD=POST
 TITLE=Service A
+```
+
+No `docker-compose.yaml`, esse mesmo servico usa por padrao:
+
+```env
+MY_CORE_HOST=http://server-core-cep:8081/cep
+TITLE=service-a
+```
+
+No `docker-compose.yaml`, os valores padrao desse servico sao:
+
+```env
+MY_CORE_HOST=http://server-core-cep:8081/cep
+TITLE=service-a
 ```
 
 Executar:
@@ -143,12 +162,15 @@ Arquivos HTTP de apoio:
    - `server-validation-cep`
    - `server-core-cep`
 5. Abra um trace e valide:
-   - Span do Service A (entrada e chamada para Service B)
-   - Span principal do Service B
+   - Span de entrada do Service A: `service-a.request /cep`
+   - Span de entrada do Service B: `service-b.request /cep`
    - Spans filhos de negocio no Service B:
-     - `viacep.lookup`
-     - `weatherapi.lookup`
-   - Spans HTTP automaticos (instrumentacao `otelhttp`) para chamadas externas
+      - `viacep.lookup`
+      - `weatherapi.lookup`
+   - Spans HTTP automaticos (`otelhttp.NewTransport`) para:
+     - chamada Service A -> Service B
+     - chamada Service B -> ViaCEP
+     - chamada Service B -> WeatherAPI
 
 ## Troubleshooting de traces
 
@@ -157,6 +179,7 @@ Se aparecer erro como `connection refused` ao exportar traces:
 - Verifique se o `otel-collector` esta rodando (`docker compose ps`).
 - Verifique logs do collector (`docker compose logs otel-collector`).
 - Confirme em `./.docker/otel-collector-config.yaml` que o receiver gRPC esta em `0.0.0.0:4317`.
+- Se o trace estiver quebrado entre Service A e B, confirme que as requisicoes entram por `POST /cep` (rota instrumentada com `otelhttp.NewHandler`) nos dois servicos.
 - Recrie o collector se necessario:
 
 ```bash
