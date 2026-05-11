@@ -14,10 +14,7 @@ type Response struct {
 }
 
 type TemplateData struct {
-	Title              string
-	BackgroundColor    string
-	ExternalCallURL    string
-	ExternalCallMethod string
-	RequestNameOTEL    string
-	OTELTracer         trace.Tracer
+	Title           string
+	ExternalCallURL string
+	OTELTracer      trace.Tracer
 }

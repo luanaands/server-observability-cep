@@ -5,7 +5,6 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/luanaands/server-core-cep/internal/dto"
 	"github.com/luanaands/server-core-cep/internal/infra/service"
@@ -40,16 +39,11 @@ func (h *CepHandler) GetCep(w http.ResponseWriter, r *http.Request) {
 	apiWeatherKey := r.Context().Value("ApiWeatherKey").(string)
 
 	ctx := r.Context()
-	spanName := strings.TrimSpace(h.Config.Title)
-	if spanName == "" {
-		spanName = "Service B"
-	}
-	ctx, span := h.Config.OTELTracer.Start(ctx, spanName+" - "+h.Config.RequestNameOTEL)
+
+	ctx, span := h.Config.OTELTracer.Start(ctx, "service-b.request /cep")
 	span.SetAttributes(
 		attribute.String("service.title", h.Config.Title),
-		attribute.String("service.background_color", h.Config.BackgroundColor),
 		attribute.String("service.external_call_url", h.Config.ExternalCallURL),
-		attribute.String("service.external_call_method", h.Config.ExternalCallMethod),
 	)
 	defer span.End()
 

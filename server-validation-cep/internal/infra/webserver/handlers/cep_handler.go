@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/luanaands/server-validation-cep/internal/dto"
 	"github.com/luanaands/server-validation-cep/internal/infra/service"
@@ -33,16 +32,10 @@ func NewCepHandler(service service.CepDetailsInterface, config *dto.TemplateData
 func (h *CepHandler) GetCep(w http.ResponseWriter, r *http.Request) {
 	myHost := r.Context().Value("MyCoreHost").(string)
 	ctx := r.Context()
-	spanName := strings.TrimSpace(h.Config.Title)
-	if spanName == "" {
-		spanName = "Service A"
-	}
-	ctx, span := h.Config.OTELTracer.Start(ctx, spanName+" - "+h.Config.ExternalCallMethod+" /cep")
+	ctx, span := h.Config.OTELTracer.Start(ctx, "Service-a.request "+"/cep")
 	span.SetAttributes(
 		attribute.String("service.title", h.Config.Title),
-		attribute.String("service.background_color", h.Config.BackgroundColor),
 		attribute.String("service.external_call_url", h.Config.ExternalCallURL),
-		attribute.String("service.external_call_method", h.Config.ExternalCallMethod),
 	)
 	defer span.End()
 

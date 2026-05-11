@@ -27,12 +27,10 @@ type Response struct {
 }
 
 type TemplateData struct {
-	Title              string
-	BackgroundColor    string
-	ExternalCallURL    string
-	ExternalCallMethod string
-	RequestNameOTEL    string
-	OTELTracer         trace.Tracer
+	Title                 string
+	ExternalCallURL       string
+	ExternalCallURLSECOND string
+	OTELTracer            trace.Tracer
 }
 
 var ErrZipcodeNotFound = errors.New("zipcode not found")

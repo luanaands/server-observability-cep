@@ -1,5 +1,5 @@
 POST  http://localhost:8081/cep
 
 {
-  "cep": "01001201"
+  "cep": "01314001"
 }

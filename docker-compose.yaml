@@ -7,11 +7,7 @@ services:
     ports:
       - "8081:8081"
     environment:
-      - TITLE=Service B
-      - BACKGROUND_COLOR=#blue
-      - EXTENAL_CALL_URL=
-      - EXTERNAL_CALL_METHOD=
-      - REQUEST_NAME_OTEL=GetCep
+      - TITLE=service-b
       - VIA_CEP_API_HOST=http://viacep.com.br/ws/
       - API_WEATHER_HOST=http://api.weatherapi.com/v1/current.json
       - API_WEATHER_KEY=126619bcfb2b4ddcba1203902261704
@@ -29,10 +25,7 @@ services:
     ports:
       - "8082:8082"
     environment:
-      - TITLE=Service A
-      - BACKGROUND_COLOR=#red
-      - EXTENAL_CALL_URL=http://localhost:8081/cep
-      - EXTERNAL_CALL_METHOD=POST
+      - TITLE=service-a
       - MY_CORE_HOST=http://server-core-cep:8081/cep
       - OTEL_EXPORTER_OTLP_ENDPOINT=otel-collector:4317
       - OTEL_SERVICE_NAME=server-validation-cep

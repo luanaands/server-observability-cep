@@ -10,10 +10,6 @@ type Conf struct {
 	OtelExporterOtlpEndpoint string `mapstructure:"OTEL_EXPORTER_OTLP_ENDPOINT"`
 	OtelServiceName          string `mapstructure:"OTEL_SERVICE_NAME"`
 	Title                    string `mapstructure:"TITLE"`
-	BackgroundColor          string `mapstructure:"BACKGROUND_COLOR"`
-	ExternalCallURL          string `mapstructure:"EXTERNAL_CALL_URL"`
-	ExternalCallMethod       string `mapstructure:"EXTERNAL_CALL_METHOD"`
-	RequestNameOTEL          string `mapstructure:"REQUEST_NAME_OTEL"`
 	OTELTracer               trace.Tracer
 }
 
@@ -35,10 +31,6 @@ func LoadConfig() (*Conf, error) {
 	viper.BindEnv("OTEL_EXPORTER_OTLP_ENDPOINT", "OTEL_EXPORTER_OTLP_ENDPOINT")
 	viper.BindEnv("OTEL_SERVICE_NAME", "OTEL_SERVICE_NAME")
 	viper.BindEnv("TITLE", "TITLE")
-	viper.BindEnv("BACKGROUND_COLOR", "BACKGROUND_COLOR")
-	viper.BindEnv("EXTERNAL_CALL_URL", "EXTERNAL_CALL_URL")
-	viper.BindEnv("EXTERNAL_CALL_METHOD", "EXTERNAL_CALL_METHOD")
-	viper.BindEnv("REQUEST_NAME_OTEL", "REQUEST_NAME_OTEL")
 
 	err := viper.Unmarshal(&cfg)
 	if err != nil {

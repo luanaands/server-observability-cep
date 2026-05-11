@@ -54,11 +54,9 @@ func (m *mockCepDetailsService) GetCepDetails(_ context.Context, cep, url string
 
 func newTestConfig() *dto.TemplateData {
 	return &dto.TemplateData{
-		Title:              "Service A",
-		BackgroundColor:    "#FF5733",
-		ExternalCallURL:    "http://external",
-		ExternalCallMethod: "POST",
-		OTELTracer:         &mockTracer{},
+		Title:           "Service A",
+		ExternalCallURL: "http://external",
+		OTELTracer:      &mockTracer{},
 	}
 }
 

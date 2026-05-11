@@ -62,12 +62,9 @@ func main() {
 	tracer := otel.Tracer("service-tracer")
 
 	templateData := &dto.TemplateData{
-		Title:              configs.Title,
-		BackgroundColor:    configs.BackgroundColor,
-		ExternalCallURL:    configs.ExternalCallURL,
-		ExternalCallMethod: configs.ExternalCallMethod,
-		RequestNameOTEL:    configs.RequestNameOTEL,
-		OTELTracer:         tracer,
+		OTELTracer:      tracer,
+		Title:           configs.Title,
+		ExternalCallURL: configs.MyCoreHost,
 	}
 
 	r := chi.NewRouter()
@@ -81,8 +78,6 @@ func main() {
 	r.Post("/cep", handlerCep.GetCep)
 
 	r.Get("/docs/*", httpSwagger.Handler(httpSwagger.URL("http://localhost:8082/docs/doc.json")))
-	// Instrumenta todas as rotas HTTP
-	//handler := otelhttp.NewHandler(r, "http-server")
 
 	go func() {
 		log.Println("Server is running on port 8082")

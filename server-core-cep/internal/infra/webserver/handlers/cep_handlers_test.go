@@ -43,12 +43,9 @@ func (mt *mockTracer) Start(ctx context.Context, spanName string, opts ...trace.
 
 func newTestConfig() *dto.TemplateData {
 	return &dto.TemplateData{
-		Title:              "Service B",
-		BackgroundColor:    "#FF5733",
-		ExternalCallURL:    "http://external",
-		ExternalCallMethod: "POST",
-		RequestNameOTEL:    "GetCep",
-		OTELTracer:         &mockTracer{},
+		Title:           "Service B",
+		ExternalCallURL: "http://external",
+		OTELTracer:      &mockTracer{},
 	}
 }
 
